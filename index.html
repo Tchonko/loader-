@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url(mining.jpg);
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #45a049;
+            }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .error {
+            color: red;
+            display: none;
+        }
+
+        .description {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .conditional-field {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+
+    <h1>LOADER EVALUATION</h1>
+    <form id="loaderForm">
+
+        <label for="loader_cycle_time">Loader cycle time (in minutes):</label>
+        <input type="number" id="loader_cycle_time" name="loader_cycle_time" min="0.01" step="0.01" required>
+        <span id="loadersCycleTimeError" class="error">Please enter a strictly positive number.</span>
+        <br><br>
+
+            <label for="volumetric_capacity">Loader bucket volumetric capacity (in m&sup3):</label>
+        <input type="number" id="volumetric_capacity" name="volumetric_capacity" min="0.01" step="0.01" required>
+        <span id="volumetricCapacityError" class="error">Please enter a strictly positive number.</span>
+        <br><br>
+
+        <label for="material">
+            Type of material:
+            <select id="material">
+                <option id="material" value="0">Good cohesive material (Ex: Wet topsoil, wet clay, sandy clay)</option>
+                <option id="material" value="1">Fairly well cohesive material (Ex: dry topsoil, sand, gravel)</option>
+                <option id="material" value="2">Medium cohesive material (Ex: broken rock, dry minerals, dry clay)</option>
+                <option id="material" value="3">Very weak cohesive material (Ex: poorly fragmented rock)</option>
+            </select>
+        </label>
+        <br><br>
+
+        <label for="work">
+            Nature of the work:
+            <select id="work">
+                <option id="work" value="0">Emptying into a truck</option>
+                <option id="work" value="1">Emptying on the floor</option>
+            </select>
+        </label>
+        <br><br>
+
+        <!-- Conditional field -->
+        <div id="conditionalField" class="conditional-field">
+            <label for="capacity">Truck Capacity:</label>
+            <input type="number" id="capacity" name="capacity" min="0.01" step="0.01" required>
+            <span id="cpacityError" class="error">Please enter a strictly positive number.</span>
+            <br><br>
+        </div>
+
+        <label for="organisation">
+            Work organisation factor:
+            <select id="organisation">
+                <option id="organisation" value="0">Good work organization</option>
+                <option id="organisation" value="1">Bad work organization</option>
+            </select>
+        </label>
+        <br><br>
+
+        <label for="driving">
+            Driving factor:
+            <select id="driving">
+                <option id="driving" value="0">Good driving experience</option>
+                <option id="driving" value="1">Medium driving experience</option>
+                <option id="driving" value="2">No driving experience</option>
+            </select>
+        </label>
+        <br><br>
+
+
+
+        <!-- Percentage field -->
+        <label for="availability">Availability of material:</label>
+        <input type="number" id="availability" class="availability" min="0" max="100"><br>
+        <br><br>
+
+
+        <button type="button" onclick={submitForm()}>Loader Evaluation</button>
+
+    </form>
+
+
+    <div id="result"></div>
+
+    <script>
+         const fields = [
+            { id: 'loader_cycle_time', errorId: 'loadersCycleTimeError'},
+            { id: 'volumetric_capacity', errorId: 'volumetricCapacityError'}
+        ];
+
+        // Show or hide the conditional field based on material selection
+        document.getElementById('work').addEventListener('change', function () {
+            const work = this.value;
+            const conditionalField = document.getElementById('conditionalField');
+            if (work === '0') { // Adjust this condition as needed
+                conditionalField.style.display = 'block';
+                // Add event listener for validating the conditional field
+                additionalInfoInput.addEventListener('input', function () {
+                    const value = parseFloat(additionalInfoInput.value);
+                    if (isNaN(value) || value <= 0) {
+                        additionalInfoInput.nextElementSibling.style.display = 'inline';
+                    } else {
+                        additionalInfoInput.nextElementSibling.style.display = 'none';
+                    }
+                });
+            } else {
+                conditionalField.style.display = 'none';
+                additionalInfoInput.removeEventListener('input', function () {
+                    const value = parseFloat(additionalInfoInput.value);
+                    if (isNaN(value) || value <= 0) {
+                        additionalInfoInput.nextElementSibling.style.display = 'inline';
+                    } else {
+                        additionalInfoInput.nextElementSibling.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        function validateInput(event) {
+            const input = event.target;
+            const error = document.getElementById(input.dataset.errorId);
+            if (input.value <= 0) {
+                error.style.display = 'inline';
+            } else {
+                error.style.display = 'none';
+            }
+        }
+
+        fields.forEach(field => {
+            const input = document.getElementById(field.id);
+            input.dataset.errorId = field.errorId;
+            input.addEventListener('input', validateInput);
+        });
+
+        function validateForm() {
+            let isValid = true;
+
+            fields.forEach(field => {
+                const input = document.getElementById(field.id);
+                const error = document.getElementById(field.errorId);
+                if (input.value <= 0) {
+                    error.style.display = 'inline';
+                    isValid = false;
+                } else {
+                    error.style.display = 'none';
+                }
+            });
+
+            document.querySelectorAll('.availability').forEach(input => {
+                const value = parseFloat(input.value);
+                if (isNaN(value) || value < 0 || value > 100) {
+                    isValid = false;
+                    input.nextElementSibling.style.display = 'inline';
+                } else {
+                    input.nextElementSibling.style.display = 'none';
+                }
+            });
+
+
+            return isValid;
+        }
+
+        // Function to get the filling coefficient R based on material selection
+        function getMaterialFactor() {
+            const material = document.getElementById('material').value;
+            switch (material) {
+                case '0':
+                    return 1.15;
+                case '1':
+                    return 1.05;
+                case '2':
+                    return 0.90;
+                case '3':
+                    return 0.75;
+                default:
+                    return 1.15; // Default fallback value
+            }
+        }
+
+        // Function to get the organisation factor based on the type of organisation
+        function getOrganizationFactor() {
+            const organisation = document.getElementById('organisation').value;
+            switch (organisation) {
+                case '0':
+                    return 0.83;
+                case '1':
+                    return 0.67;
+                default:
+                    return 0.83; // Default fallback value
+            }
+        }
+
+        // Function to get the driving factor based the experience of the driver
+        function getDrivingFactor() {
+            const driving = document.getElementById('driving').value;
+            switch (driving) {
+                case '0':
+                    return 1;
+                case '1':
+                    return 0.95;
+                case '2':
+                    return 0.85;
+                default:
+                    return 1; // Default fallback value
+            }
+        }
+
+        // Function to get the driving factor based the experience of the driver
+        function getWorkingFactor() {
+            const work = document.getElementById('work').value;
+            const volumetric_capacity = parseFloat(document.getElementById('volumetric_capacity').value);
+            switch (work) {
+                case '0':
+                    const capacity = parseFloat(document.getElementById('capacity').value);
+                    if (capacity < 4 * volumetric_capacity) {
+                        return 0.95;
+                    }
+                    else {
+                        return 1;
+                    }
+                case '1':
+                    return 1.05;
+                default:
+                    return 1; // Default fallback value
+            }
+        }
+
+        function getEquipmentAdvice(volumetric_capacity) {
+            if (volumetric_capacity <= 3.3) {
+                return "Caterpillar 950F; Price: 58 000 euros"
+            }
+            if (3.3 < volumetric_capacity && volumetric_capacity <= 3.8) {
+                return "Caterpillar 960F; Price: 41 446 euros"
+            }
+            if (3.8 < volumetric_capacity && volumetric_capacity <= 4.1) {
+                return "Caterpillar 966F; Price: 35 161 euros"
+            }
+            if (4.1 < volumetric_capacity && volumetric_capacity <= 4.7) {
+                return "Caterpillar 970F; Price: 67 788 euros"
+            }
+            if (4.7 < volumetric_capacity && volumetric_capacity <= 5.3) {
+                return "Caterpillar 980F; Price: 293 700 euros"
+            }
+            if (5.3 < volumetric_capacity && volumetric_capacity <= 6.1) {
+                return "Caterpillar 988F; Price: 365 000 euros"
+            }
+            if (6.1 < volumetric_capacity && volumetric_capacity <= 8.6) {
+                return "Caterpillar 990F; Price: 370 000 euros"
+            }
+            if (8.6 < volumetric_capacity && volumetric_capacity <= 10.7) {
+                return "Caterpillar 996F; Price: 430 000 euros"
+            }
+        }
+
+
+        function submitForm() {
+            const resultDiv = document.getElementById('result');
+            if (validateForm()) {
+                const loader_cycle_time = parseFloat(document.getElementById('loader_cycle_time').value) * 60; // Convert in seconds
+                const volumetric_capacity = parseFloat(document.getElementById('volumetric_capacity').value);
+                const availability = parseFloat(document.getElementById('availability').value) / 100; // percentage
+                const material = getMaterialFactor();
+                const organisation = getOrganizationFactor();
+                const driving = getDrivingFactor();
+                const working = getWorkingFactor();
+
+                const theoretical_production = volumetric_capacity * (3600 / loader_cycle_time);
+                const instantaneous_production = theoretical_production * material * driving * working * organisation;
+                const industrial_production = instantaneous_production * availability;
+
+                // Equipment Advice
+                const advice = getEquipmentAdvice(volumetric_capacity);
+
+
+                resultDiv.innerHTML = ` Theorical production: ${theoretical_production} m&sup3;/h <br>
+                                        Instantaneous production: ${instantaneous_production} m&sup3;/h <br>
+                                        Industrial production: ${industrial_production} m&sup3;/h <br>
+                                        Equiment Advice: ${advice}`;
+                // Your custom function logic here
+            } else {
+                resultDiv.innerHTML = "Form data is invalid. Please correct the errors and try again.";
+            }
+        }
+
+        document.getElementById('positiveNumbersForm').addEventListener('submit', function(event) {
+            if (!validateForm()) {
+                event.preventDefault();
+            }
+        });
+
+       
+    </script>
+
+</body>
+</html>
